@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { brandProfiles, clients } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getCurrentWorkspace, requireAuth } from "@/lib/auth";
@@ -14,7 +14,8 @@ import { revalidatePath } from "next/cache";
  * Vérifie que le client appartient au workspace courant
  */
 async function verifyClientAccess(clientId: string, workspaceId: string) {
-  const [client] = await db
+  const database = getDb();
+  const [client] = await database
     .select()
     .from(clients)
     .where(and(eq(clients.id, clientId), eq(clients.workspaceId, workspaceId)))
@@ -36,7 +37,8 @@ export async function getBrandProfileByClientId(
   // Vérifier l'accès au client
   await verifyClientAccess(clientId, workspaceId);
 
-  const [profile] = await db
+  const database = getDb();
+  const [profile] = await database
     .select()
     .from(brandProfiles)
     .where(eq(brandProfiles.clientId, clientId))
@@ -48,6 +50,7 @@ export async function getBrandProfileByClientId(
 export async function upsertBrandProfile(input: UpsertBrandProfileInput) {
   await requireAuth();
   const workspace = await getCurrentWorkspace();
+  const database = getDb();
 
   // Validation
   const validated = upsertBrandProfileSchema.parse(input);
@@ -63,7 +66,7 @@ export async function upsertBrandProfile(input: UpsertBrandProfileInput) {
 
   if (existing) {
     // Mise à jour
-    const [updated] = await db
+    const [updated] = await database
       .update(brandProfiles)
       .set({
         toneOfVoice: validated.toneOfVoice || null,
@@ -82,7 +85,7 @@ export async function upsertBrandProfile(input: UpsertBrandProfileInput) {
     return updated;
   } else {
     // Création
-    const [created] = await db
+    const [created] = await database
       .insert(brandProfiles)
       .values({
         clientId: validated.clientId,

@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { reports, clients } from "@/lib/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { getCurrentWorkspace, requireAuth } from "@/lib/auth";
@@ -14,7 +14,8 @@ import { revalidatePath } from "next/cache";
  * Vérifie que le client appartient au workspace courant
  */
 async function verifyClientAccess(clientId: string, workspaceId: string) {
-  const [client] = await db
+  const database = getDb();
+  const [client] = await database
     .select()
     .from(clients)
     .where(and(eq(clients.id, clientId), eq(clients.workspaceId, workspaceId)))
@@ -30,6 +31,7 @@ async function verifyClientAccess(clientId: string, workspaceId: string) {
 export async function upsertReport(input: UpsertReportInput) {
   await requireAuth();
   const workspace = await getCurrentWorkspace();
+  const database = getDb();
 
   // Validation
   const validated = upsertReportSchema.parse(input);
@@ -38,7 +40,7 @@ export async function upsertReport(input: UpsertReportInput) {
   await verifyClientAccess(validated.clientId, workspace.id);
 
   // Vérifier si un rapport existe déjà pour ce client/mois/année
-  const [existing] = await db
+  const [existing] = await database
     .select()
     .from(reports)
     .where(
@@ -52,7 +54,7 @@ export async function upsertReport(input: UpsertReportInput) {
 
   if (existing) {
     // Mise à jour
-    const [updated] = await db
+    const [updated] = await database
       .update(reports)
       .set({
         title: validated.title,
@@ -70,7 +72,7 @@ export async function upsertReport(input: UpsertReportInput) {
     return updated;
   } else {
     // Création
-    const [created] = await db
+    const [created] = await database
       .insert(reports)
       .values({
         clientId: validated.clientId,
@@ -98,7 +100,8 @@ export async function listReportsByClient(
 
   await verifyClientAccess(clientId, workspaceId);
 
-  const reportsList = await db
+  const database = getDb();
+  const reportsList = await database
     .select()
     .from(reports)
     .where(eq(reports.clientId, clientId))
@@ -110,7 +113,8 @@ export async function listReportsByClient(
 export async function listReportsByWorkspace(workspaceId: string) {
   await requireAuth();
 
-  const reportsList = await db
+  const database = getDb();
+  const reportsList = await database
     .select({
       report: reports,
       client: clients,
@@ -129,7 +133,8 @@ export async function listReportsByWorkspace(workspaceId: string) {
 export async function getReportById(reportId: string, workspaceId: string) {
   await requireAuth();
 
-  const [result] = await db
+  const database = getDb();
+  const [result] = await database
     .select({
       report: reports,
       client: clients,
@@ -157,6 +162,7 @@ export async function getReportById(reportId: string, workspaceId: string) {
 export async function deleteReport(reportId: string) {
   await requireAuth();
   const workspace = await getCurrentWorkspace();
+  const database = getDb();
 
   // Récupérer le rapport pour vérifier l'accès
   const report = await getReportById(reportId, workspace.id);
@@ -167,7 +173,7 @@ export async function deleteReport(reportId: string) {
   const clientId = report.clientId;
 
   // Supprimer
-  await db.delete(reports).where(eq(reports.id, reportId));
+  await database.delete(reports).where(eq(reports.id, reportId));
 
   revalidatePath(`/app/clients/${clientId}/reports`);
   revalidatePath(`/app/reports`);

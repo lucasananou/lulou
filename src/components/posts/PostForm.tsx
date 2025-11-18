@@ -36,7 +36,7 @@ const platformLabels: Record<SocialPlatform, string> = {
 
 interface PostFormProps {
   clientId: string;
-  onSubmit: (data: CreatePostInput) => Promise<void>;
+  onSubmit: (data: CreatePostInput) => Promise<unknown>;
   defaultValues?: Partial<Post>;
   onCancel?: () => void;
 }

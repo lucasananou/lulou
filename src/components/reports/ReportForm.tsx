@@ -40,7 +40,7 @@ const monthLabels: Record<number, string> = {
 
 interface ReportFormProps {
   clientId: string;
-  onSubmit: (data: UpsertReportInput) => Promise<void>;
+  onSubmit: (data: UpsertReportInput) => Promise<unknown>;
   defaultValues?: Partial<Report>;
   onCancel?: () => void;
 }

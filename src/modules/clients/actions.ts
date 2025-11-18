@@ -1,6 +1,6 @@
 "use server";
 
-import { db, getDb } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { clients } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getCurrentWorkspace, requireAuth } from "@/lib/auth";
@@ -102,10 +102,6 @@ export async function updateClient(id: string, input: Partial<CreateClientInput>
 
 export async function listClients(workspaceId: string) {
   await requireAuth();
-  if (!db) {
-    return [];
-  }
-
   const database = getDb();
   const allClients = await database
     .select()
@@ -118,10 +114,6 @@ export async function listClients(workspaceId: string) {
 
 export async function getClientById(id: string, workspaceId: string) {
   await requireAuth();
-  if (!db) {
-    return null;
-  }
-
   const database = getDb();
   const [client] = await database
     .select()

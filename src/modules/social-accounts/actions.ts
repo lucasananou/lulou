@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { socialAccounts, clients } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getCurrentWorkspace, requireAuth } from "@/lib/auth";
@@ -16,7 +16,8 @@ import { revalidatePath } from "next/cache";
  * Vérifie que le client appartient au workspace courant
  */
 async function verifyClientAccess(clientId: string, workspaceId: string) {
-  const [client] = await db
+  const database = getDb();
+  const [client] = await database
     .select()
     .from(clients)
     .where(and(eq(clients.id, clientId), eq(clients.workspaceId, workspaceId)))
@@ -38,7 +39,8 @@ export async function listSocialAccountsByClient(
   // Vérifier l'accès au client
   await verifyClientAccess(clientId, workspaceId);
 
-  const accounts = await db
+  const database = getDb();
+  const accounts = await database
     .select()
     .from(socialAccounts)
     .where(eq(socialAccounts.clientId, clientId))
@@ -50,6 +52,7 @@ export async function listSocialAccountsByClient(
 export async function createSocialAccount(input: CreateSocialAccountInput) {
   await requireAuth();
   const workspace = await getCurrentWorkspace();
+  const database = getDb();
 
   // Validation
   const validated = createSocialAccountSchema.parse(input);
@@ -58,7 +61,7 @@ export async function createSocialAccount(input: CreateSocialAccountInput) {
   await verifyClientAccess(validated.clientId, workspace.id);
 
   // Créer le compte social
-  const [newAccount] = await db
+  const [newAccount] = await database
     .insert(socialAccounts)
     .values({
       clientId: validated.clientId,
@@ -80,12 +83,13 @@ export async function updateSocialAccount(
 ) {
   await requireAuth();
   const workspace = await getCurrentWorkspace();
+  const database = getDb();
 
   // Validation
   const validated = updateSocialAccountSchema.partial().parse({ id, ...input });
 
   // Récupérer le compte social pour vérifier l'accès via le client
-  const [account] = await db
+  const [account] = await database
     .select()
     .from(socialAccounts)
     .where(eq(socialAccounts.id, id))
@@ -99,7 +103,7 @@ export async function updateSocialAccount(
   await verifyClientAccess(account.clientId, workspace.id);
 
   // Mettre à jour
-  const [updated] = await db
+  const [updated] = await database
     .update(socialAccounts)
     .set({
       ...validated,
@@ -120,9 +124,10 @@ export async function updateSocialAccount(
 export async function deleteSocialAccount(id: string) {
   await requireAuth();
   const workspace = await getCurrentWorkspace();
+  const database = getDb();
 
   // Récupérer le compte social pour vérifier l'accès
-  const [account] = await db
+  const [account] = await database
     .select()
     .from(socialAccounts)
     .where(eq(socialAccounts.id, id))
@@ -136,7 +141,7 @@ export async function deleteSocialAccount(id: string) {
   await verifyClientAccess(account.clientId, workspace.id);
 
   // Supprimer
-  await db.delete(socialAccounts).where(eq(socialAccounts.id, id));
+  await database.delete(socialAccounts).where(eq(socialAccounts.id, id));
 
   revalidatePath(`/app/clients/${account.clientId}`);
   revalidatePath(`/app/clients/${account.clientId}/social-accounts`);
@@ -150,8 +155,9 @@ export async function getSocialAccountById(
   workspaceId: string
 ) {
   await requireAuth();
+  const database = getDb();
 
-  const [account] = await db
+  const [account] = await database
     .select({
       account: socialAccounts,
       client: clients,

@@ -35,7 +35,7 @@ const platformLabels: Record<SocialPlatform, string> = {
 
 interface SocialAccountFormProps {
   clientId: string;
-  onSubmit: (data: CreateSocialAccountInput) => Promise<void>;
+  onSubmit: (data: CreateSocialAccountInput) => Promise<unknown>;
   defaultValues?: Partial<SocialAccount>;
   onCancel?: () => void;
 }

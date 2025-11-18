@@ -33,12 +33,7 @@ export default async function NewPostPage({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <PostForm
-            clientId={clientId}
-            onSubmit={async (data) => {
-              await createPost(data);
-            }}
-          />
+          <PostForm clientId={clientId} onSubmit={createPost} />
         </CardContent>
       </Card>
     </div>

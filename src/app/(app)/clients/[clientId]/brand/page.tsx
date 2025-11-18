@@ -47,9 +47,7 @@ export default async function BrandProfilePage({
           <CardContent>
             <BrandProfileForm
               clientId={clientId}
-              onSubmit={async (data) => {
-                await upsertBrandProfile(data);
-              }}
+              onSubmit={upsertBrandProfile}
             />
           </CardContent>
         </Card>

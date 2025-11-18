@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import {
   approvalRequests,
   approvalItems,
@@ -22,7 +22,8 @@ import { randomBytes } from "crypto";
  * Vérifie que le client appartient au workspace courant
  */
 async function verifyClientAccess(clientId: string, workspaceId: string) {
-  const [client] = await db
+  const database = getDb();
+  const [client] = await database
     .select()
     .from(clients)
     .where(and(eq(clients.id, clientId), eq(clients.workspaceId, workspaceId)))
@@ -53,7 +54,8 @@ export async function createApprovalRequest(input: CreateApprovalRequestInput) {
   await verifyClientAccess(validated.clientId, workspace.id);
 
   // Vérifier que les posts existent et appartiennent au client
-  const postsList = await db
+  const database = getDb();
+  const postsList = await database
     .select()
     .from(posts)
     .where(
@@ -80,7 +82,7 @@ export async function createApprovalRequest(input: CreateApprovalRequestInput) {
   }
 
   // Créer la demande d'approbation
-  const [newRequest] = await db
+  const [newRequest] = await database
     .insert(approvalRequests)
     .values({
       clientId: validated.clientId,
@@ -100,10 +102,10 @@ export async function createApprovalRequest(input: CreateApprovalRequestInput) {
     status: "pending" as const,
   }));
 
-  await db.insert(approvalItems).values(items);
+  await database.insert(approvalItems).values(items);
 
   // Associer les posts à la demande
-  await db
+  await database
     .update(posts)
     .set({
       approvalRequestId: newRequest.id,
@@ -118,9 +120,10 @@ export async function createApprovalRequest(input: CreateApprovalRequestInput) {
 export async function sendApprovalRequest(id: string) {
   await requireAuth();
   const workspace = await getCurrentWorkspace();
+  const database = getDb();
 
   // Récupérer la demande
-  const [request] = await db
+  const [request] = await database
     .select()
     .from(approvalRequests)
     .where(
@@ -143,7 +146,7 @@ export async function sendApprovalRequest(id: string) {
   }
 
   // Mettre à jour la demande
-  const [updated] = await db
+  const [updated] = await database
     .update(approvalRequests)
     .set({
       token,
@@ -165,7 +168,8 @@ export async function sendApprovalRequest(id: string) {
 }
 
 export async function getApprovalRequestByToken(token: string) {
-  const [request] = await db
+  const database = getDb();
+  const [request] = await database
     .select()
     .from(approvalRequests)
     .where(eq(approvalRequests.token, token))
@@ -181,7 +185,7 @@ export async function getApprovalRequestByToken(token: string) {
   }
 
   // Récupérer les items avec les posts
-  const items = await db
+  const items = await database
     .select({
       item: approvalItems,
       post: posts,
@@ -208,7 +212,8 @@ export async function updateApprovalItemStatus(
   const validated = updateApprovalItemSchema.parse(input);
 
   // Récupérer l'item
-  const [item] = await db
+  const database = getDb();
+  const [item] = await database
     .select({
       item: approvalItems,
       request: approvalRequests,
@@ -234,7 +239,7 @@ export async function updateApprovalItemStatus(
   }
 
   // Mettre à jour l'item
-  await db
+  await database
     .update(approvalItems)
     .set({
       status: validated.status as any,
@@ -244,7 +249,7 @@ export async function updateApprovalItemStatus(
     .where(eq(approvalItems.id, validated.itemId));
 
   // Mettre à jour le statut du post
-  await db
+  await database
     .update(posts)
     .set({
       status: validated.status === "approved" ? "approved" : "to_approve",
@@ -252,7 +257,7 @@ export async function updateApprovalItemStatus(
     .where(eq(posts.id, item.item.postId));
 
   // Vérifier le statut global de la demande
-  const allItems = await db
+  const allItems = await database
     .select()
     .from(approvalItems)
     .where(eq(approvalItems.approvalRequestId, item.request.id));
@@ -270,7 +275,7 @@ export async function updateApprovalItemStatus(
   }
 
   if (newStatus === "approved") {
-    await db
+    await database
       .update(approvalRequests)
       .set({
         status: "approved",
@@ -279,7 +284,7 @@ export async function updateApprovalItemStatus(
       })
       .where(eq(approvalRequests.id, item.request.id));
   } else if (newStatus === "partially_approved") {
-    await db
+    await database
       .update(approvalRequests)
       .set({
         status: "partially_approved",
@@ -294,9 +299,10 @@ export async function updateApprovalItemStatus(
 export async function closeApprovalRequest(id: string) {
   await requireAuth();
   const workspace = await getCurrentWorkspace();
+  const database = getDb();
 
   // Récupérer la demande
-  const [request] = await db
+  const [request] = await database
     .select()
     .from(approvalRequests)
     .where(
@@ -309,7 +315,7 @@ export async function closeApprovalRequest(id: string) {
   }
 
   // Mettre à jour le statut
-  const [updated] = await db
+  const [updated] = await database
     .update(approvalRequests)
     .set({
       status: "closed",
@@ -331,8 +337,8 @@ export async function listApprovalRequestsByClient(
   await requireAuth();
 
   await verifyClientAccess(clientId, workspaceId);
-
-  const requests = await db
+  const database = getDb();
+  const requests = await database
     .select()
     .from(approvalRequests)
     .where(
@@ -346,7 +352,7 @@ export async function listApprovalRequestsByClient(
   // Récupérer le nombre d'items pour chaque demande
   const requestsWithCounts = await Promise.all(
     requests.map(async (request) => {
-      const items = await db
+      const items = await database
         .select()
         .from(approvalItems)
         .where(eq(approvalItems.approvalRequestId, request.id));
@@ -366,8 +372,9 @@ export async function getApprovalRequestById(
   workspaceId: string
 ) {
   await requireAuth();
+  const database = getDb();
 
-  const [request] = await db
+  const [request] = await database
     .select()
     .from(approvalRequests)
     .where(
@@ -380,7 +387,7 @@ export async function getApprovalRequestById(
   }
 
   // Récupérer les items avec les posts
-  const items = await db
+  const items = await database
     .select({
       item: approvalItems,
       post: posts,
@@ -409,11 +416,12 @@ export async function getAvailablePostsForApproval(
   workspaceId: string
 ) {
   await requireAuth();
+  const database = getDb();
 
   await verifyClientAccess(clientId, workspaceId);
 
   // Posts qui ne sont pas déjà dans une demande d'approbation
-  const availablePosts = await db
+  const availablePosts = await database
     .select()
     .from(posts)
     .where(

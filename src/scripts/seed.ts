@@ -6,15 +6,16 @@
  * Note: Assurez-vous d'avoir configuré DATABASE_URL dans .env.local
  */
 
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { workspaces, workspaceMembers } from "@/lib/db/schema";
 
 async function seed() {
   console.log("🌱 Starting seed...");
+  const database = getDb();
 
   try {
     // Créer un workspace par défaut
-    const [workspace] = await db
+    const [workspace] = await database
       .insert(workspaces)
       .values({
         name: "Lulou",

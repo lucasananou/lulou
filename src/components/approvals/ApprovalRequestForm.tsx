@@ -32,7 +32,7 @@ const platformLabels: Record<string, string> = {
 interface ApprovalRequestFormProps {
   clientId: string;
   availablePosts: Post[];
-  onSubmit: (data: CreateApprovalRequestInput) => Promise<void>;
+  onSubmit: (data: CreateApprovalRequestInput) => Promise<unknown>;
 }
 
 export function ApprovalRequestForm({

@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { posts, clients } from "@/lib/db/schema";
 import { eq, and, gte, lte, isNotNull } from "drizzle-orm";
 import { requireAuth } from "@/lib/auth";
@@ -9,7 +9,8 @@ import { requireAuth } from "@/lib/auth";
  * Vérifie que le client appartient au workspace courant
  */
 async function verifyClientAccess(clientId: string, workspaceId: string) {
-  const [client] = await db
+  const database = getDb();
+  const [client] = await database
     .select()
     .from(clients)
     .where(and(eq(clients.id, clientId), eq(clients.workspaceId, workspaceId)))
@@ -44,9 +45,10 @@ export async function getClientCalendar(
 
   // Vérifier l'accès au client
   await verifyClientAccess(clientId, workspaceId);
+  const database = getDb();
 
   // Récupérer les posts avec scheduled_at dans la plage
-  const calendarPosts = await db
+  const calendarPosts = await database
     .select({
       id: posts.id,
       title: posts.title,

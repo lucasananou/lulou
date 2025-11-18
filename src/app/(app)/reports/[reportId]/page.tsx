@@ -70,9 +70,7 @@ export default async function ReportDetailPage({
           <CardContent>
             <ReportForm
               clientId={report.clientId}
-              onSubmit={async (data) => {
-                await upsertReport(data);
-              }}
+              onSubmit={upsertReport}
               defaultValues={report}
             />
           </CardContent>

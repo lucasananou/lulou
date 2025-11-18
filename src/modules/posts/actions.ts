@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { posts, clients, postAssets } from "@/lib/db/schema";
 import { eq, and, gte, lte, inArray, isNull, isNotNull } from "drizzle-orm";
 import { getCurrentWorkspace, requireAuth } from "@/lib/auth";
@@ -18,7 +18,8 @@ import { revalidatePath } from "next/cache";
  * Vérifie que le client appartient au workspace courant
  */
 async function verifyClientAccess(clientId: string, workspaceId: string) {
-  const [client] = await db
+  const database = getDb();
+  const [client] = await database
     .select()
     .from(clients)
     .where(and(eq(clients.id, clientId), eq(clients.workspaceId, workspaceId)))
@@ -48,7 +49,8 @@ export async function listPostsByClient(
   // Vérifier l'accès au client
   await verifyClientAccess(clientId, workspaceId);
 
-  let query = db
+  const database = getDb();
+  let query = database
     .select()
     .from(posts)
     .where(eq(posts.clientId, clientId));
@@ -72,7 +74,7 @@ export async function listPostsByClient(
     conditions.push(lte(posts.scheduledAt, filters.to));
   }
 
-  const allPosts = await db
+  const allPosts = await database
     .select()
     .from(posts)
     .where(and(...conditions))
@@ -84,7 +86,8 @@ export async function listPostsByClient(
 export async function getPostById(postId: string, workspaceId: string) {
   await requireAuth();
 
-  const [post] = await db
+  const database = getDb();
+  const [post] = await database
     .select({
       post: posts,
       client: clients,
@@ -104,7 +107,7 @@ export async function getPostById(postId: string, workspaceId: string) {
   }
 
   // Récupérer les assets
-  const assets = await db
+  const assets = await database
     .select()
     .from(postAssets)
     .where(eq(postAssets.postId, postId));
@@ -118,6 +121,7 @@ export async function getPostById(postId: string, workspaceId: string) {
 export async function createPost(input: CreatePostInput) {
   const userId = await requireAuth();
   const workspace = await getCurrentWorkspace();
+  const database = getDb();
 
   // Validation
   const validated = createPostSchema.parse(input);
@@ -126,7 +130,7 @@ export async function createPost(input: CreatePostInput) {
   await verifyClientAccess(validated.clientId, workspace.id);
 
   // Créer le post
-  const [newPost] = await db
+  const [newPost] = await database
     .insert(posts)
     .values({
       clientId: validated.clientId,
@@ -151,6 +155,7 @@ export async function createPost(input: CreatePostInput) {
 export async function updatePost(postId: string, input: Partial<Omit<CreatePostInput, "clientId">>) {
   const userId = await requireAuth();
   const workspace = await getCurrentWorkspace();
+  const database = getDb();
 
   // Récupérer le post pour vérifier l'accès
   const post = await getPostById(postId, workspace.id);
@@ -172,7 +177,7 @@ export async function updatePost(postId: string, input: Partial<Omit<CreatePostI
   }
 
   // Mettre à jour
-  const [updated] = await db
+  const [updated] = await database
     .update(posts)
     .set({
       platform: validated.platform,
@@ -200,6 +205,7 @@ export async function updatePost(postId: string, input: Partial<Omit<CreatePostI
 export async function updatePostStatus(postId: string, status: string) {
   await requireAuth();
   const workspace = await getCurrentWorkspace();
+  const database = getDb();
 
   // Récupérer le post pour vérifier l'accès
   const post = await getPostById(postId, workspace.id);
@@ -211,7 +217,7 @@ export async function updatePostStatus(postId: string, status: string) {
   const validated = updatePostStatusSchema.parse({ id: postId, status });
 
   // Mettre à jour le statut
-  const [updated] = await db
+  const [updated] = await database
     .update(posts)
     .set({
       status: validated.status as any,
@@ -234,6 +240,7 @@ export async function updatePostStatus(postId: string, status: string) {
 export async function deletePost(postId: string) {
   await requireAuth();
   const workspace = await getCurrentWorkspace();
+  const database = getDb();
 
   // Récupérer le post pour vérifier l'accès
   const post = await getPostById(postId, workspace.id);
@@ -244,7 +251,7 @@ export async function deletePost(postId: string) {
   const clientId = post.clientId;
 
   // Supprimer (cascade supprimera aussi les assets)
-  await db.delete(posts).where(eq(posts.id, postId));
+  await database.delete(posts).where(eq(posts.id, postId));
 
   revalidatePath(`/app/clients/${clientId}/posts`);
   revalidatePath(`/app/clients/${clientId}/calendar`);
@@ -258,12 +265,13 @@ export async function getClientPostOverview(clientId: string, workspaceId: strin
   await requireAuth();
 
   await verifyClientAccess(clientId, workspaceId);
+  const database = getDb();
 
   const now = new Date();
   const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
   // Posts programmés cette semaine
-  const scheduledThisWeek = await db
+  const scheduledThisWeek = await database
     .select()
     .from(posts)
     .where(
@@ -276,7 +284,7 @@ export async function getClientPostOverview(clientId: string, workspaceId: strin
     );
 
   // Prochain post à venir
-  const [nextPost] = await db
+  const [nextPost] = await database
     .select()
     .from(posts)
     .where(

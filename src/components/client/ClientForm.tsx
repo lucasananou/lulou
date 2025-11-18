@@ -18,7 +18,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 interface ClientFormProps {
-  onSubmit: (data: CreateClientInput) => Promise<void>;
+  onSubmit: (data: CreateClientInput) => Promise<unknown>;
   defaultValues?: Partial<CreateClientInput>;
 }
 

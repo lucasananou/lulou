@@ -1,5 +1,5 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
-import { db } from "./db";
+import { getDb } from "./db";
 import { workspaces, workspaceMembers } from "./db/schema";
 import { eq, and } from "drizzle-orm";
 
@@ -18,9 +18,10 @@ export async function requireAuth() {
 
 export async function getCurrentWorkspace() {
   const userId = await requireAuth();
+  const database = getDb();
   
   // Récupère le premier workspace auquel l'utilisateur appartient
-  const member = await db
+  const member = await database
     .select({
       workspace: workspaces,
     })
@@ -40,8 +41,9 @@ export async function getCurrentWorkspace() {
 export async function requireWorkspaceMember(role?: "owner" | "admin" | "member") {
   const userId = await requireAuth();
   const workspace = await getCurrentWorkspace();
+  const database = getDb();
 
-  const member = await db
+  const member = await database
     .select()
     .from(workspaceMembers)
     .where(

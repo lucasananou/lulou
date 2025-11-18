@@ -19,7 +19,7 @@ type BrandProfile = typeof brandProfiles.$inferSelect;
 
 interface BrandProfileFormProps {
   clientId: string;
-  onSubmit: (data: UpsertBrandProfileInput) => Promise<void>;
+  onSubmit: (data: UpsertBrandProfileInput) => Promise<unknown>;
   defaultValues?: BrandProfile | null;
   onCancel?: () => void;
 }
