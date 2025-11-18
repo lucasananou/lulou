@@ -2,10 +2,12 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users } from "lucide-react";
+import { ClientReady } from "@/components/system/ClientReady";
 
 export default function DashboardPage() {
   return (
     <div className="space-y-6">
+      <ClientReady />
       <div>
         <h1 className="text-3xl font-bold">Dashboard</h1>
         <p className="text-muted-foreground">
