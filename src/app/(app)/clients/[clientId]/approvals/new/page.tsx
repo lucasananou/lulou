@@ -38,7 +38,9 @@ export default async function NewApprovalRequestPage({
           <ApprovalRequestForm
             clientId={clientId}
             availablePosts={availablePosts}
-            onSubmit={createApprovalRequest}
+            onSubmit={async (data) => {
+              await createApprovalRequest(data);
+            }}
           />
         </CardContent>
       </Card>
