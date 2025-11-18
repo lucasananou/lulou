@@ -38,7 +38,7 @@ interface ApprovalRequestDetailProps {
   request: any;
   clientId: string;
   onSend: (id: string) => Promise<any>;
-  onClose: (id: string) => Promise<void>;
+  onClose: (id: string) => Promise<any>;
 }
 
 export function ApprovalRequestDetail({
