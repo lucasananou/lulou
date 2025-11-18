@@ -174,18 +174,6 @@ export const brandProfiles = pgTable(
   }
 );
 
-export const clientsRelations = relations(clients, ({ one, many }) => ({
-  workspace: one(workspaces, {
-    fields: [clients.workspaceId],
-    references: [workspaces.id],
-  }),
-  socialAccounts: many(socialAccounts),
-  brandProfile: one(brandProfiles, {
-    fields: [clients.id],
-    references: [brandProfiles.clientId],
-  }),
-}));
-
 export const socialAccountsRelations = relations(socialAccounts, ({ one }) => ({
   client: one(clients, {
     fields: [socialAccounts.clientId],
@@ -300,6 +288,10 @@ export const postsRelations = relations(posts, ({ one, many }) => ({
     references: [clients.id],
   }),
   assets: many(postAssets),
+  approvalRequest: one(approvalRequests, {
+    fields: [posts.approvalRequestId],
+    references: [approvalRequests.id],
+  }),
 }));
 
 export const postAssetsRelations = relations(postAssets, ({ one }) => ({
@@ -377,19 +369,6 @@ export const approvalItemsRelations = relations(approvalItems, ({ one }) => ({
     references: [posts.id],
   }),
 }));
-
-export const postsRelations = relations(posts, ({ one, many }) => ({
-  client: one(clients, {
-    fields: [posts.clientId],
-    references: [clients.id],
-  }),
-  assets: many(postAssets),
-  approvalRequest: one(approvalRequests, {
-    fields: [posts.approvalRequestId],
-    references: [approvalRequests.id],
-  }),
-}));
-
 export const reportsRelations = relations(reports, ({ one }) => ({
   client: one(clients, {
     fields: [reports.clientId],
