@@ -34,7 +34,9 @@ export default async function ApprovalRequestDetailPage({
         request={request}
         clientId={clientId}
         onSend={sendApprovalRequest}
-        onClose={closeApprovalRequest}
+        onClose={async (id) => {
+          await closeApprovalRequest(id);
+        }}
       />
     </div>
   );
