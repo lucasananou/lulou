@@ -31,8 +31,31 @@ export async function getCurrentWorkspace() {
     .limit(1)
     .then((rows) => rows[0]);
 
+  // Si aucun workspace trouvé, créer un workspace par défaut et ajouter l'utilisateur comme owner
   if (!member) {
-    throw new Error("No workspace found for user");
+    const user = await currentUser();
+    const workspaceName = user?.firstName && user?.lastName 
+      ? `${user.firstName} ${user.lastName}'s Workspace`
+      : "Mon Workspace";
+    
+    // Créer le workspace
+    const [newWorkspace] = await database
+      .insert(workspaces)
+      .values({
+        name: workspaceName,
+      })
+      .returning();
+
+    // Ajouter l'utilisateur comme owner
+    await database
+      .insert(workspaceMembers)
+      .values({
+        workspaceId: newWorkspace.id,
+        userId: userId,
+        role: "owner",
+      });
+
+    return newWorkspace;
   }
 
   return member.workspace;
