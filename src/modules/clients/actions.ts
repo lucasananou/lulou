@@ -1,6 +1,6 @@
 "use server";
 
-import { db } from "@/lib/db";
+import { db, getDb } from "@/lib/db";
 import { clients } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getCurrentWorkspace, requireAuth } from "@/lib/auth";
@@ -15,12 +15,13 @@ import { revalidatePath } from "next/cache";
 export async function createClient(input: CreateClientInput) {
   await requireAuth();
   const workspace = await getCurrentWorkspace();
+  const database = getDb();
 
   // Validation
   const validated = createClientSchema.parse(input);
 
   // Vérifier l'unicité du slug dans le workspace
-  const existing = await db
+  const existing = await database
     .select()
     .from(clients)
     .where(
@@ -36,7 +37,7 @@ export async function createClient(input: CreateClientInput) {
   }
 
   // Créer le client
-  const [newClient] = await db
+  const [newClient] = await database
     .insert(clients)
     .values({
       workspaceId: workspace.id,
@@ -57,6 +58,7 @@ export async function createClient(input: CreateClientInput) {
 export async function updateClient(id: string, input: Partial<CreateClientInput>) {
   await requireAuth();
   const workspace = await getCurrentWorkspace();
+  const database = getDb();
 
   const validated = updateClientSchema.partial().parse({ id, ...input });
 
@@ -68,7 +70,7 @@ export async function updateClient(id: string, input: Partial<CreateClientInput>
 
   // Si le slug change, vérifier l'unicité
   if (validated.slug && validated.slug !== existing.slug) {
-    const duplicate = await db
+    const duplicate = await database
       .select()
       .from(clients)
       .where(
@@ -84,7 +86,7 @@ export async function updateClient(id: string, input: Partial<CreateClientInput>
     }
   }
 
-  const [updated] = await db
+  const [updated] = await database
     .update(clients)
     .set({
       ...validated,
@@ -100,8 +102,12 @@ export async function updateClient(id: string, input: Partial<CreateClientInput>
 
 export async function listClients(workspaceId: string) {
   await requireAuth();
+  if (!db) {
+    return [];
+  }
 
-  const allClients = await db
+  const database = getDb();
+  const allClients = await database
     .select()
     .from(clients)
     .where(eq(clients.workspaceId, workspaceId))
@@ -112,8 +118,12 @@ export async function listClients(workspaceId: string) {
 
 export async function getClientById(id: string, workspaceId: string) {
   await requireAuth();
+  if (!db) {
+    return null;
+  }
 
-  const [client] = await db
+  const database = getDb();
+  const [client] = await database
     .select()
     .from(clients)
     .where(and(eq(clients.id, id), eq(clients.workspaceId, workspaceId)))

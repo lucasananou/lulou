@@ -56,7 +56,9 @@ export default async function ClientReportsPage({
             </DialogHeader>
             <ReportForm
               clientId={clientId}
-              onSubmit={upsertReport}
+              onSubmit={async (data) => {
+                await upsertReport(data);
+              }}
             />
           </DialogContent>
         </Dialog>
@@ -81,7 +83,9 @@ export default async function ClientReportsPage({
                 </DialogHeader>
                 <ReportForm
                   clientId={clientId}
-                  onSubmit={upsertReport}
+                  onSubmit={async (data) => {
+                    await upsertReport(data);
+                  }}
                 />
               </DialogContent>
             </Dialog>

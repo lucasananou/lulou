@@ -100,7 +100,9 @@ export function SocialAccountList({ clientId, accounts }: SocialAccountListProps
             </DialogHeader>
             <SocialAccountForm
               clientId={clientId}
-              onSubmit={createSocialAccount}
+              onSubmit={async (data) => {
+                await createSocialAccount(data);
+              }}
               onCancel={() => setIsCreateDialogOpen(false)}
             />
           </DialogContent>
@@ -126,7 +128,9 @@ export function SocialAccountList({ clientId, accounts }: SocialAccountListProps
             </DialogHeader>
             <SocialAccountForm
               clientId={clientId}
-              onSubmit={createSocialAccount}
+              onSubmit={async (data) => {
+                await createSocialAccount(data);
+              }}
               onCancel={() => setIsCreateDialogOpen(false)}
             />
           </DialogContent>

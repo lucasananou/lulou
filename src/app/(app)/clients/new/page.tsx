@@ -20,7 +20,11 @@ export default function NewClientPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ClientForm onSubmit={createClient} />
+          <ClientForm
+            onSubmit={async (data) => {
+              await createClient(data);
+            }}
+          />
         </CardContent>
       </Card>
     </div>

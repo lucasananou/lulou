@@ -54,7 +54,9 @@ export function BrandProfileView({
                 </DialogHeader>
                 <BrandProfileForm
                   clientId={clientId}
-                  onSubmit={upsertBrandProfile}
+                  onSubmit={async (data) => {
+                    await upsertBrandProfile(data);
+                  }}
                   defaultValues={brandProfile}
                   onCancel={() => setIsEditDialogOpen(false)}
                 />
